@@ -87,16 +87,20 @@ spec:
       - name: {{ . }}
       {{- end }}
       {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds}}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if or .Values.gitconfig .Values.gitconfigSecretName }}
           lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "atlantis drain"]
+            {{- if or .Values.gitconfig .Values.gitconfigSecretName }}
             postStart:
               exec:
                 command: ["/bin/sh", "-c", "cp /etc/secret-gitconfig/gitconfig /home/atlantis/.gitconfig && chown atlantis /home/atlantis/.gitconfig"]
-          {{- end}}
+            {{- end}}
           {{- if .Values.command }}
           command:
           {{- range .Values.command }}
